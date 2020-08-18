@@ -108,21 +108,24 @@ object SpreadsheetReader {
 
   fun mapToNewLdus(ldus: List<Ldu>, teamSpecs: List<TeamSpec>): List<Ldu> =
       ldus
-          .map { ldu ->
-            val spec = Optional.ofNullable(teamSpecs.find {
+          .flatMap { ldu ->
+            val specGroups = teamSpecs.filter {
               it.oldProbationAreaCode == ldu.probationAreaCode &&
                   it.oldLduCode == ldu.lduCode
-            })
-            spec
-                .map {
+            }.groupBy { it.newProbationAreaCode }
+            specGroups
+                .map { (_, teams) ->
+                  val team = teams.first()
                   Ldu(
-                      it.newProbationAreaCode,
-                      it.newLduCode,
+                      team.newProbationAreaCode,
+                      team.newLduCode,
                       ldu.fmb, // could be null if this LDU contains Team FMBs
-                      mapToNewTeams(ldu, teamSpecs)
+                      mapToNewTeams(ldu, teams)
                   )
+                }.
+                ifEmpty {
+                  listOf(Ldu(ldu.probationAreaCode, ldu.lduCode, ldu.fmb, listOf(), false))
                 }
-                .orElse(Ldu(ldu.probationAreaCode, ldu.lduCode, ldu.fmb, listOf(), false))
           }
 
 
@@ -171,14 +174,14 @@ fun main() {
 
   newLdus
       .filter { !it.foundMatch }
-      .map { "No match for LDU ${it.probationAreaCode} ${it.lduCode} ${it.fmb}" }
+      .map { "No match for LDU ${it.probationAreaCode}/${it.lduCode} ${it.fmb}" }
       .forEach(::println)
 
   newLdus
       .flatMap { ldu ->
         ldu.teams
             .filter { !it.foundMatch }
-            .map { "No match for Team ${ldu.probationAreaCode} ${ldu.lduCode} ${it.teamCode} ${it.fmb}" }
+            .map { "No match for Team code ${it.teamCode} in ${ldu.probationAreaCode}/${ldu.lduCode}  ${it.fmb}" }
       }
       .forEach(::println)
 }
