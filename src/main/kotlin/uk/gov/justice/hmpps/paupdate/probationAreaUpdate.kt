@@ -168,20 +168,20 @@ fun main() {
   toCommands(newLdus, "dev").forEach(::println)
 
   println()
-  println("Found ${ldus.filter { it.fmb != null }.size} LDU FMBs, mapped to ${newLdus.filter { it.fmb != null && it.foundMatch }.size}")
-  println("Found ${ldus.flatMap { it.teams }.size} Team FMBs, mapped to ${newLdus.flatMap { it.teams.filter { it.foundMatch } }.size}")
+  println("# Found ${ldus.filter { it.fmb != null }.size} LDU FMBs, mapped to ${newLdus.filter { it.fmb != null && it.foundMatch }.size}")
+  println("# Found ${ldus.flatMap { it.teams }.size} Team FMBs, mapped to ${newLdus.flatMap { it.teams.filter { it.foundMatch } }.size}")
   println()
 
   newLdus
       .filter { !it.foundMatch }
-      .map { "No match for LDU ${it.probationAreaCode}/${it.lduCode} ${it.fmb}" }
+      .map { "# No match for LDU ${it.probationAreaCode}/${it.lduCode} ${it.fmb}" }
       .forEach(::println)
 
   newLdus
       .flatMap { ldu ->
         ldu.teams
             .filter { !it.foundMatch }
-            .map { "No match for Team code ${it.teamCode} in ${ldu.probationAreaCode}/${ldu.lduCode}  ${it.fmb}" }
+            .map { "# No match for Team code ${it.teamCode} in ${ldu.probationAreaCode}/${ldu.lduCode}  ${it.fmb}" }
       }
       .forEach(::println)
 }
