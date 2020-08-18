@@ -30,13 +30,17 @@ object FunctionalMailboxes {
                 .takeWhile { it.getCell(0)?.stringCellValue?.isNotEmpty() ?: false }
                 .map(::toTeam)
                 .groupBy { it.ldu }
-                .map{ (ldu, teams) -> Pair(ldu, teams.groupBy { it.functionalMailbox.toLowerCase() })}
-                .map { (ldu, functionalMailBoxes) -> toEmailFreqs(ldu, functionalMailBoxes)}
-                .forEach { ( ldu, teamMailboxes) ->
+                .map { (ldu, teams) -> Pair(ldu, teams.groupBy { it.functionalMailbox.toLowerCase() }) }
+                .map { (ldu, functionalMailBoxes) -> toEmailFreqs(ldu, functionalMailBoxes) }
+                .forEach { (ldu, teamMailboxes) ->
                     println(ldu.probationCode + ": " + ldu.lduCode)
-                    teamMailboxes.forEach{
-                        val mailbox = if (it.mailbox.isBlank()) "MISSING" else it.mailbox
-                        println("\t'" + mailbox + "': " + it.freq)
+                    teamMailboxes.forEach {
+                        val mailbox = if
+                           (it.mailbox.isBlank()) "MISSING"
+                        else
+                            it.mailbox
+
+                        println("\t'$mailbox ': ${it.freq}  ${it.teams}")
                     }
                     println()
                 }
@@ -44,9 +48,7 @@ object FunctionalMailboxes {
 }
 
 
-fun main(args: Array<String>) {
-    FunctionalMailboxes.readSheet("src/main/resources/confirmed nps crc mailboxes.xlsx",
-            "Confirmed NE CRC FMBs")
-    FunctionalMailboxes.readSheet("src/main/resources/confirmed nps crc mailboxes.xlsx",
-            "Confirmed NE NPS FMBs")
+fun main() {
+    FunctionalMailboxes.readSheet("src/main/resources/confirmed nps crc mailboxes.xlsx", "Confirmed NE CRC FMBs")
+    FunctionalMailboxes.readSheet("src/main/resources/confirmed nps crc mailboxes.xlsx", "Confirmed NE NPS FMBs")
 }
