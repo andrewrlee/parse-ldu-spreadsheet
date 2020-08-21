@@ -7,7 +7,8 @@ import org.apache.poi.ss.usermodel.WorkbookFactory
 import uk.gov.justice.hmpps.paupdate.SpreadsheetReader.mapToNewLdus
 import uk.gov.justice.hmpps.paupdate.SpreadsheetReader.parseJson
 import uk.gov.justice.hmpps.paupdate.SpreadsheetReader.readSheets
-import uk.gov.justice.hmpps.paupdate.SpreadsheetReader.toCommands
+import uk.gov.justice.hmpps.paupdate.SpreadsheetReader.toLduSql
+import uk.gov.justice.hmpps.paupdate.SpreadsheetReader.toProbationAreaScriptCommands
 import uk.gov.justice.hmpps.paupdate.SpreadsheetReader.toLdus
 import java.io.FileInputStream
 import java.io.InputStream
@@ -143,7 +144,7 @@ object SpreadsheetReader {
                 .orElse(Team(team.teamCode, team.fmb, false))
           }
 
-  fun toCommands(newLdus: List<Ldu>, env: String): List<String> =
+  fun toProbationAreaScriptCommands(newLdus: List<Ldu>, env: String): List<String> =
       newLdus
           .filter { it.fmb != null && it.foundMatch }
           .map {
@@ -157,15 +158,20 @@ object SpreadsheetReader {
                 }
           }
 
+  fun toLduSql(teamSpecs: List<TeamSpec>): List<String> {
+    val groups = teamSpecs.groupBy { it.newProbationAreaCode + it.newLduCode }
+    val entries = groups.entries.sortedBy { (key, _) -> key }
+    return entries.map {(_, teams) -> "insert into active_local_delivery_units (probation_area_code, ldu_code) values('${teams[0].newProbationAreaCode}', '${teams[0].newLduCode}');" }
+  }
 }
 
 
-fun main() {
+private fun generateNewFMBCommands() {
   val teamSpecs = sheets.flatMap { readSheets(it.first, it.second) }
   val ldus = toLdus(parseJson())
   val newLdus = mapToNewLdus(ldus, teamSpecs)
 
-  toCommands(newLdus, "dev").forEach(::println)
+  toProbationAreaScriptCommands(newLdus, "dev").forEach(::println)
 
   println()
   println("# Found ${ldus.filter { it.fmb != null }.size} LDU FMBs, mapped to ${newLdus.filter { it.fmb != null && it.foundMatch }.size}")
@@ -184,6 +190,19 @@ fun main() {
             .map { "# No match for Team code ${it.teamCode} in ${ldu.probationAreaCode}/${ldu.lduCode}  ${it.fmb}" }
       }
       .forEach(::println)
+}
+
+fun generateNewLduSql() {
+  val teamSpecs = sheets.flatMap { readSheets(it.first, it.second) }
+  val sqls = toLduSql(teamSpecs)
+  sqls.forEach(::println)
+  println()
+  println("-- ${sqls.size} rows")
+}
+
+fun main() {
+  //generateNewFMBCommands()
+  generateNewLduSql()
 }
 
 
